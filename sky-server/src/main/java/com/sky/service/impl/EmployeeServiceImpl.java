@@ -25,6 +25,8 @@ import org.springframework.util.DigestUtils;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import static com.sky.context.BaseContext.*;
+
 @Service
 public class EmployeeServiceImpl implements EmployeeService {
 
@@ -85,8 +87,8 @@ public class EmployeeServiceImpl implements EmployeeService {
         employee.setUpdateTime(LocalDateTime.now());
 
         //设置当前记录人与修改人的ID
-        employee.setCreateUser(BaseContext.getCurrentId());
-        employee.setUpdateUser(BaseContext.getCurrentId());
+        employee.setCreateUser(getCurrentId());
+        employee.setUpdateUser(getCurrentId());
 
         //将持久化的数据转存到数据库
          employeeMapper.insert(employee);
@@ -108,5 +110,23 @@ public class EmployeeServiceImpl implements EmployeeService {
         long total = employeePage.getTotal();
         List<Employee> records = employeePage.getResult();
         return new PageResult(total,records);
+    }
+
+    /**
+     * 启用禁用账号查询
+     * @param status
+     * @param id
+     */
+    @Override
+    public void startOrStop(Integer status, Long id) {
+
+//        Employee employee = new Employee();
+//        employee.setStatus(status);
+//        employee.setId(id);
+        Employee employee = Employee.builder()
+                .id(id)
+                .status(status)
+                .build();
+        employeeMapper.update(employee);
     }
 }
