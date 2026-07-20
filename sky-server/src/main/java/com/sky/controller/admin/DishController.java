@@ -67,6 +67,4 @@ public class DishController {
         dishService.deleteBatch(ids);
         return Result.success();
     }
-
-
 }
