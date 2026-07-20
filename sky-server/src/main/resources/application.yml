@@ -43,6 +43,15 @@ sky:
     # 设置前端传递过来的令牌名称
     admin-token-name: token
 
+    # 用户端用户生成JWTtoken
+    user-secret-key: itheima
+    user-ttl: 7200000
+    user-token-name: authentication
+
+  wechat:
+    secret: ${sky.wechat.secret}
+    appid: ${sky.wechat.appid}
+
   alioss:
     endpoint: ${sky.alioss.endpoint}
     access-key-id: ${sky.alioss.access-key-id}
