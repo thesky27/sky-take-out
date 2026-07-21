@@ -11,6 +11,36 @@
                 #{createUser}, #{updateUser})
     </insert>
 
+
+    <update id="update">
+        update setmeal
+        <set>
+            <if test="categoryId!=null">
+                category_id=#{categoryId},
+            </if>
+            <if test="name!=null">
+                name=#{name},
+            </if>
+            <if test="status!=null">
+                status=#{status},
+            </if>
+            <if test="description!=null">
+                description=#{description},
+            </if>
+            <if test="image!=null">
+                image=#{image},
+            </if>
+            <if test="updateTime!=null">
+                update_time=#{updateTime},
+            </if>
+            <if test="updateUser!=null">
+                update_user=#{updateUser},
+            </if>
+        </set>
+        where id = #{id}
+    </update>
+
+
     <select id="pageQuery" resultType="com.sky.vo.SetmealVO">
         select s.* ,c.name as categoryName
         from setmeal as s
@@ -29,5 +59,14 @@
         </where>
         order by s.create_time desc
     </select>
+
+
+    <select id="countByDishIdAndStatus" resultType="java.lang.Integer">
+        select count(*) from setmeal as s inner join setmeal_dish as sd
+        on s.id=sd.setmeal_id
+        where sd.dish_id = #{id}
+        and s.status = #{enable}
+    </select>
+
 
 </mapper>

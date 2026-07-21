@@ -56,4 +56,11 @@ public interface DishService {
      * @return
      */
     List<Dish> list(Long categoryId);
+
+    /**
+     * 对菜品进行起售和停售处理
+     * @param status
+     * @param id
+     */
+    void updateStatus(Integer status, Long id);
 }

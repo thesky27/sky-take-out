@@ -9,9 +9,11 @@ import com.sky.dto.DishPageQueryDTO;
 import com.sky.entity.Dish;
 import com.sky.entity.DishFlavor;
 import com.sky.exception.DeletionNotAllowedException;
+import com.sky.exception.DishStatusOperationException;
 import com.sky.mapper.DishFlavorMapper;
 import com.sky.mapper.DishMapper;
 import com.sky.mapper.SetMealDishMapper;
+import com.sky.mapper.SetmealMapper;
 import com.sky.result.PageResult;
 import com.sky.service.DishService;
 import com.sky.vo.DishVO;
@@ -36,6 +38,8 @@ public class DishServiceImpl implements DishService {
     @Autowired
     private SetMealDishMapper setMealDishMapper;
 
+    @Autowired
+    private SetmealMapper setmealMapper;
 
 
     /**
@@ -193,5 +197,31 @@ public class DishServiceImpl implements DishService {
                 .status(StatusConstant.ENABLE)
                 .build();
         return dishMapper.list(dish);
+    }
+
+    /**
+     * 对菜品的起售和停售
+     * @param status
+     * @param id
+     */
+    @Transactional
+    @Override
+    public void updateStatus(Integer status, Long id) {
+        //首先判断这个菜品所在的套餐里是否在售
+        if (status==StatusConstant.DISABLE){
+            // 查询该菜品关联的、正在售卖的套餐数量
+            Integer count = setmealMapper.countByDishIdAndStatus(id, StatusConstant.ENABLE);
+
+            if (count != null && count > 0) {
+                throw new DishStatusOperationException(MessageConstant.DISH_NOT_OPERATION_STATUS);
+            }
+        }
+
+        //菜品停售的话
+        Dish build = Dish.builder()
+                .id(id)
+                .status(status)
+                .build();
+        dishMapper.update(build);
     }
 }
