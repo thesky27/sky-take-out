@@ -1,6 +1,7 @@
 package com.sky.controller.admin;
 
 
+import com.sky.constant.RedisKeyNameConstant;
 import com.sky.dto.DishDTO;
 import com.sky.dto.DishPageQueryDTO;
 import com.sky.entity.Dish;
@@ -13,9 +14,11 @@ import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.xmlbeans.impl.xb.xsdschema.Public;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/admin/dish")
@@ -25,6 +28,9 @@ public class DishController {
 
     @Autowired
     DishService dishService;
+
+    @Autowired
+    private RedisTemplate redisTemplate;
 
 
     /**
@@ -38,6 +44,10 @@ public class DishController {
 
         log.info("新增菜品：{}",dishDTO);
         dishService.saveDishWithFlavor(dishDTO);
+
+        //清理redis的缓存数据
+        cleanCache(RedisKeyNameConstant.DISH_KEY_NAME + dishDTO.getCategoryId());
+
         return  Result.success();
     }
 
@@ -66,9 +76,17 @@ public class DishController {
     public Result deleteDish(@RequestParam List<Long> ids){
         log.info("菜品批量删除，{}",ids);
         dishService.deleteBatch(ids);
+
+        cleanCache(RedisKeyNameConstant.DISH_KEYS_NAME);
+
         return Result.success();
     }
 
+    /**
+     * 根据具体的ID来查询菜品
+     * @param id
+     * @return
+     */
     @GetMapping("/{id}")
     @ApiOperation("根据ID查询菜品")
     public Result<DishVO> getByID(@PathVariable Long id ){
@@ -77,11 +95,19 @@ public class DishController {
         return Result.success(dishVO);
     }
 
+    /**
+     * 修改菜品的数据
+     * @param dishDTO
+     * @return
+     */
     @PutMapping
     @ApiOperation("修改菜品数据")
     public Result updateDish(@RequestBody DishDTO dishDTO){
         log.info("修改菜品{}",dishDTO);
         dishService.updateWithFlavor(dishDTO);
+
+        cleanCache(RedisKeyNameConstant.DISH_KEYS_NAME);
+
         return Result.success();
     }
 
@@ -108,6 +134,17 @@ public class DishController {
     public Result updateStatus(@PathVariable Integer status,Long id) {
         log.info("菜品ID为{},要{}",id,status);
         dishService.updateStatus(status,id);
+
+        cleanCache(RedisKeyNameConstant.DISH_KEYS_NAME);
         return Result.success();
+    }
+
+    /**
+     * 统一清理缓存数据
+     * @param pattern
+     */
+    private void cleanCache(String pattern){
+        Set<String> keys = redisTemplate.keys(pattern);
+        redisTemplate.delete(keys);
     }
 }
