@@ -54,8 +54,10 @@ public class OrderServiceImpl implements OrderService {
 
     @Value("${sky.wechat.mock-pay:false}")
     private Boolean mockPay;
+
     /**
      * 用户下单
+     *
      * @param ordersSubmitDTO
      * @return
      */
@@ -74,15 +76,15 @@ public class OrderServiceImpl implements OrderService {
         ShoppingCart shoppingCart = ShoppingCart.builder()
                 .userId(currentId)
                 .build();
-        List<ShoppingCart>  shoppingCartlist = shoppingCartMapper.list(shoppingCart);
+        List<ShoppingCart> shoppingCartlist = shoppingCartMapper.list(shoppingCart);
 
-        if (shoppingCartlist==null||shoppingCartlist.size() == 0) {
+        if (shoppingCartlist == null || shoppingCartlist.size() == 0) {
             throw new ShoppingCartBusinessException(MessageConstant.SHOPPING_CART_IS_NULL);
         }
 
         //订单表插入一条数据
         Orders orders = new Orders();
-        BeanUtils.copyProperties(ordersSubmitDTO,orders);
+        BeanUtils.copyProperties(ordersSubmitDTO, orders);
         orders.setOrderTime(LocalDateTime.now());
         orders.setPayStatus(Orders.UN_PAID);
         orders.setStatus(Orders.PENDING_PAYMENT);
@@ -95,7 +97,7 @@ public class OrderServiceImpl implements OrderService {
         List<OrderDetail> orderDetailList = new ArrayList<>();
         for (ShoppingCart cart : shoppingCartlist) {
             OrderDetail orderDetail = new OrderDetail();//订单明细
-            BeanUtils.copyProperties(cart,orderDetail);
+            BeanUtils.copyProperties(cart, orderDetail);
             orderDetail.setOrderId(orders.getId());//设置关联的订单ID
             orderDetailList.add(orderDetail);
         }
@@ -177,6 +179,7 @@ public class OrderServiceImpl implements OrderService {
 
     /**
      * 历史订单分页查询
+     *
      * @param page
      * @param pageSize
      * @param status
@@ -218,6 +221,7 @@ public class OrderServiceImpl implements OrderService {
      * @param id
      * @return
      */
+    @Override
     public OrderVO details(Long id) {
         // 根据id查询订单
         Orders orders = orderMapper.getById(id);
@@ -232,4 +236,56 @@ public class OrderServiceImpl implements OrderService {
 
         return orderVO;
     }
+
+    /**
+     * 用户取消订单
+     *
+     * @param id
+     */
+    @Override
+    public void userCancelById(Long id) throws Exception {
+        // 根据id查询订单
+        Orders ordersDB = orderMapper.getById(id);
+
+        // 校验订单是否存在
+        if (ordersDB == null) {
+            throw new OrderBusinessException(MessageConstant.ORDER_NOT_FOUND);
+        }
+
+        //订单状态 1待付款 2待接单 3已接单 4派送中 5已完成 6已取消
+        if (ordersDB.getStatus() > 2) {
+            throw new OrderBusinessException(MessageConstant.ORDER_STATUS_ERROR);
+        }
+
+        Orders orders = new Orders();
+        orders.setId(ordersDB.getId());
+
+        // 订单处于待接单状态下取消，需要进行退款
+        if (ordersDB.getStatus().equals(Orders.TO_BE_CONFIRMED)) {
+
+            //todo :开发代码，模拟微信支付功能，同时也模拟退款功能
+            if (Boolean.TRUE.equals(mockPay)) {
+                // 开发环境：模拟退款成功，不调用微信退款接口
+                orders.setPayStatus(Orders.REFUND);
+            } else {
+                //调用微信支付退款接口
+                weChatPayUtil.refund(
+                        ordersDB.getNumber(), //商户订单号
+                        ordersDB.getNumber(), //商户退款单号
+                        new BigDecimal(0.01),//退款金额，单位 元
+                        new BigDecimal(0.01));//原订单金额
+
+                //支付状态修改为 退款
+                orders.setPayStatus(Orders.REFUND);
+            }
+
+
+            // 更新订单状态、取消原因、取消时间
+            orders.setStatus(Orders.CANCELLED);
+            orders.setCancelReason("用户取消");
+            orders.setCancelTime(LocalDateTime.now());
+            orderMapper.update(orders);
+        }
+    }
 }
+
