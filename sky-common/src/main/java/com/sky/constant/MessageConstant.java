@@ -25,5 +25,6 @@ public class MessageConstant {
     public static final String ORDER_STATUS_ERROR = "订单状态错误";
     public static final String ORDER_NOT_FOUND = "订单不存在";
     public static final String DISH_NOT_OPERATION_STATUS = "当前菜品关联了正在售卖的套餐，不能停售";
+    public static final String ORDER_TIME_OUT_CANCELED = "订单超时，自动取消";
 
 }
