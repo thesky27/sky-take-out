@@ -88,14 +88,15 @@
             </if>
         </where> order by order_time desc
     </select>
+
     <select id="sumByMap" resultType="java.lang.Double">
         select sum(orders.amount) from orders
         <where>
-            <if test="beginDate != null">
-                and order_time &gt;= #{beginDate}
+            <if test="begin != null">
+                and order_time &gt;= #{begin}
             </if>
-            <if test="endDate != null">
-                and order_time &lt;= #{endDate}
+            <if test="end != null">
+                and order_time &lt;= #{end}
             </if>
             <if test="status != null">
                 and status = #{status}

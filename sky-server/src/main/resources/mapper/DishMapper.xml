@@ -71,4 +71,16 @@
         select a.* from dish as a  left join setmeal_dish as b on a.id=b.dish_id where setmeal_id=#{setmealId}
     </select>
 
+    <select id="countByMap" resultType="java.lang.Integer">
+        select count(id) from dish
+        <where>
+            <if test="status != null">
+                and status = #{status}
+            </if>
+            <if test="categoryId != null">
+                and category_id = #{categoryId}
+            </if>
+        </where>
+    </select>
+
 </mapper>
